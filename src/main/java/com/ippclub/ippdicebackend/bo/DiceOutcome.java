@@ -1,5 +1,8 @@
 package com.ippclub.ippdicebackend.bo;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -9,14 +12,14 @@ public enum DiceOutcome {
         public boolean matches(List<Integer> dice) {
             return dice.stream().allMatch(d -> d == 4);
         }
-        
+
         @Override
-        public int compareSameLevel(List<Integer> dice1, List<Integer> dice2) {
-            // 六抔红是最高级，无需比较
-            return 0;
+        public int calScore(List<Integer> dice) {
+            // 六抔红无需进一步比较
+            return DiceOutcome.LIU_PAO_HONG.rank;
         }
     },
-    ZHUANG_YUAN_CJH("状元插金花", 90) {
+    ZHUANG_YUAN_CJH("状元插金花", 99) {
         @Override
         public boolean matches(List<Integer> dice) {
             Map<Integer, Long> countMap = getCountMap(dice);
@@ -24,12 +27,12 @@ public enum DiceOutcome {
         }
         
         @Override
-        public int compareSameLevel(List<Integer> dice1, List<Integer> dice2) {
+        public int calScore(List<Integer> dice) {
             // 状元插金花无需进一步比较（除非有多个，但规则中未说明）
-            return 0;
+            return DiceOutcome.ZHUANG_YUAN_CJH.rank;
         }
     },
-    WU_HUANG("五红", 85) {
+    WU_HUANG("五红", 90) {
         @Override
         public boolean matches(List<Integer> dice) {
             Map<Integer, Long> countMap = getCountMap(dice);
@@ -37,11 +40,10 @@ public enum DiceOutcome {
         }
         
         @Override
-        public int compareSameLevel(List<Integer> dice1, List<Integer> dice2) {
+        public int calScore(List<Integer> dice) {
             // 比较非四点的点数大小
-            int nonFour1 = dice1.stream().filter(d -> d != 4).findFirst().orElse(0);
-            int nonFour2 = dice2.stream().filter(d -> d != 4).findFirst().orElse(0);
-            return Integer.compare(nonFour1, nonFour2);
+            int nonFour1 = dice.stream().filter(d -> d != 4).findFirst().orElse(0);
+            return DiceOutcome.WU_HUANG.rank + nonFour1;
         }
     },
     WU_ZI("五子登科", 80) {
@@ -52,65 +54,56 @@ public enum DiceOutcome {
         }
         
         @Override
-        public int compareSameLevel(List<Integer> dice1, List<Integer> dice2) {
+        public int calScore(List<Integer> dice) {
             // 比较非五子点数的大小
-            Map<Integer, Long> countMap1 = getCountMap(dice1);
-            Map<Integer, Long> countMap2 = getCountMap(dice2);
+            Map<Integer, Long> countMap1 = getCountMap(dice);
             
             int singlePoint1 = countMap1.entrySet().stream()
                     .filter(e -> e.getValue() == 1)
                     .map(Map.Entry::getKey)
                     .findFirst()
                     .orElse(0);
-                    
-            int singlePoint2 = countMap2.entrySet().stream()
-                    .filter(e -> e.getValue() == 1)
-                    .map(Map.Entry::getKey)
-                    .findFirst()
-                    .orElse(0);
-            
-            return Integer.compare(singlePoint1, singlePoint2);
+
+            return DiceOutcome.WU_ZI.rank + singlePoint1;
         }
     },
-    ZHUANG_YUAN("普通状元", 75) {
+    ZHUANG_YUAN("普通状元", 60) {
         @Override
         public boolean matches(List<Integer> dice) {
             return getCountMap(dice).getOrDefault(4, 0L) == 4;
         }
         
         @Override
-        public int compareSameLevel(List<Integer> dice1, List<Integer> dice2) {
-            // 比较另外两个点数之和
-            int sum1 = dice1.stream().filter(d -> d != 4).mapToInt(Integer::intValue).sum();
-            int sum2 = dice2.stream().filter(d -> d != 4).mapToInt(Integer::intValue).sum();
-            return Integer.compare(sum1, sum2);
+        public int calScore(List<Integer> dice) {
+            int sum1 = dice.stream().filter(d -> d != 4).mapToInt(Integer::intValue).sum();
+            return DiceOutcome.ZHUANG_YUAN.rank + sum1;
         }
     },
-    DUI_TANG("对堂", 70) {
+    DUI_TANG("对堂", 50) {
         @Override
         public boolean matches(List<Integer> dice) {
-            List<Integer> sorted = dice.stream().sorted().collect(Collectors.toList());
+            List<Integer> sorted = dice.stream().sorted().toList();
             return sorted.equals(Arrays.asList(1,2,3,4,5,6));
         }
         
         @Override
-        public int compareSameLevel(List<Integer> dice1, List<Integer> dice2) {
+        public int calScore(List<Integer> dice1) {
             // 对堂无需进一步比较
-            return 0;
+            return DiceOutcome.DUI_TANG.rank;
         }
     },
-    SAN_HONG("三红", 60) {
+    SAN_HONG("三红", 40) {
         @Override
         public boolean matches(List<Integer> dice) {
             return getCountMap(dice).getOrDefault(4, 0L) == 3;
         }
 
         @Override
-        public int compareSameLevel(List<Integer> dice1, List<Integer> dice2) {
-            return 0;
+        public int calScore(List<Integer> dice) {
+            return DiceOutcome.SAN_HONG.rank;
         }
     },
-    SI_JIN("四进", 50) {
+    SI_JIN("四进", 30) {
         @Override
         public boolean matches(List<Integer> dice) {
             Map<Integer, Long> countMap = getCountMap(dice);
@@ -123,33 +116,33 @@ public enum DiceOutcome {
         }
         
         @Override
-        public int compareSameLevel(List<Integer> dice1, List<Integer> dice2) {
+        public int calScore(List<Integer> dice) {
             // 四进无需进一步比较
-            return 0;
+            return DiceOutcome.SI_JIN.rank;
         }
     },
-    ER_JU("二举", 40) {
+    ER_JU("二举", 20) {
         @Override
         public boolean matches(List<Integer> dice) {
             return getCountMap(dice).getOrDefault(4, 0L) == 2;
         }
 
         @Override
-        public int compareSameLevel(List<Integer> dice1, List<Integer> dice2) {
+        public int calScore(List<Integer> dice) {
             // 二举无需进一步比较
-            return 0;
+            return DiceOutcome.ER_JU.rank;
         }
     },
-    YI_XIU("一秀", 30) {
+    YI_XIU("一秀", 10) {
         @Override
         public boolean matches(List<Integer> dice) {
             return getCountMap(dice).getOrDefault(4, 0L) == 1;
         }
 
         @Override
-        public int compareSameLevel(List<Integer> dice1, List<Integer> dice2) {
+        public int calScore(List<Integer> dice) {
             // 一秀无需进一步比较
-            return 0;
+            return DiceOutcome.YI_XIU.rank;
         }
     },
     PU_TONG("普通", 0) {
@@ -159,9 +152,9 @@ public enum DiceOutcome {
         }
 
         @Override
-        public int compareSameLevel(List<Integer> dice1, List<Integer> dice2) {
+        public int calScore(List<Integer> dice) {
             // 普通无需进一步比较
-            return 0;
+            return DiceOutcome.PU_TONG.rank;
         }
     };
 
@@ -185,12 +178,9 @@ public enum DiceOutcome {
     public abstract boolean matches(List<Integer> dice);
     
     /**
-     * 比较同等级骰子结果的大小
-     * @param dice1 第一个骰子组合
-     * @param dice2 第二个骰子组合
-     * @return 正数表示第一个更大，负数表示第二个更大，0表示相等
+     * 计算单次博饼的得分
      */
-    public abstract int compareSameLevel(List<Integer> dice1, List<Integer> dice2);
+    public abstract int calScore(List<Integer> dice);
 
     /**
      * 统计点数 -> 出现次数
@@ -209,12 +199,24 @@ public enum DiceOutcome {
                 .max(Comparator.comparingInt(DiceOutcome::getRank))
                 .orElse(PU_TONG);
     }
-    
-    /**
-     * 根据 int[] 类型的骰子数组创建 DiceOutcome
-     */
-    public static DiceOutcome fromDice(int[] dice) {
-        List<Integer> diceList = Arrays.stream(dice).boxed().collect(Collectors.toList());
-        return fromDice(diceList);
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
+    @JsonValue // 序列化时只输出这个字段
+    public String toValue() {
+        return name;
+    }
+
+    @JsonCreator
+    public static DiceOutcome fromValue(String value) {
+        for (DiceOutcome outcome : values()) {
+            if (outcome.name.equals(value)) {
+                return outcome;
+            }
+        }
+        throw new IllegalArgumentException("Unknown value: " + value);
     }
 }

@@ -17,4 +17,9 @@ public class CreateRoomDTO {
      * 投掷轮次
      */
     private Integer round = 1;
+
+    /**
+     * 房间名字
+     */
+    private String name;
 }

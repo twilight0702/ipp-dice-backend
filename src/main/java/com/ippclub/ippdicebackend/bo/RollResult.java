@@ -1,6 +1,7 @@
 package com.ippclub.ippdicebackend.bo;
 
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 import java.util.Objects;
@@ -9,6 +10,7 @@ import java.util.Objects;
  * 玩家单次博饼结果（值对象，不可变）
  */
 @Getter
+@ToString
 public final class RollResult {
 
     /**
@@ -24,7 +26,7 @@ public final class RollResult {
     /**
      * 单次投掷得分（用于排名）
      */
-    private Integer score;
+    private final Integer score;
 
     private RollResult(List<Integer> dices, DiceOutcome outcome, Integer score) {
         // 不可变List，防止外部修改
@@ -43,12 +45,12 @@ public final class RollResult {
         return new RollResult(dices, outcome, score);
     }
 
-    /**
-     * 方便调试打印
-     */
-    @Override
-    public String toString() {
-        return "RollResult{dices=" + dices + ", outcome=" + outcome.getName() + '}';
-    }
+//    /**
+//     * 方便调试打印
+//     */
+//    @Override
+//    public String toString() {
+//        return "RollResult{dices=" + dices + ", outcome=" + outcome.getName() + '}';
+//    }
 }
 
