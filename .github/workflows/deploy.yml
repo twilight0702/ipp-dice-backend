@@ -11,41 +11,32 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1. 拉取代码
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. 设置 JDK
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3. 构建 jar
       - name: Build
         run: mvn clean package -DskipTests
 
-      # 4. 上传 jar 到服务器
-      - name: Upload app.jar to Server
+      - name: Upload JAR
         uses: appleboy/scp-action@v0.1.6
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "target/*.jar"
-          target: "~/app.jar"
+          target: "/home/${{ secrets.SERVER_USER }}/app/app.jar"
 
-      # 5. 停掉旧进程并后台启动新进程
-      - name: Deploy to Server
+      - name: Restart Service
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            # 停掉旧进程（如果有）
-            pkill -f "java -jar" || true
-
-            # 后台启动新进程
-            screen -dmS myapp java -jar ~/app.jar
+            sudo systemctl restart myapp
