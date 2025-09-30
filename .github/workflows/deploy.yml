@@ -30,5 +30,9 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            # 停掉旧进程
             pkill -f "java -jar" || true
-            nohup java -jar ~/app.jar > app.log 2>&1 &
+
+            # 启动新进程
+            nohup java -jar ~/app.jar > ~/app.log 2>&1 &
+            disown
