@@ -48,5 +48,4 @@ jobs:
             pkill -f "java -jar" || true
 
             # 后台启动新进程
-            nohup java -jar ~/app.jar > ~/app.log 2>&1 &
-            disown
+            screen -dmS myapp java -jar ~/app.jar
