@@ -32,7 +32,6 @@ jobs:
           script: |
             # 停掉旧进程
             pkill -f "java -jar" || true
-
-            # 启动新进程
-            nohup java -jar ~/app.jar > ~/app.log 2>&1 &
-            disown
+      
+            # 启动新进程，使用 screen 保证后台长期运行
+            screen -dmS myapp java -jar ~/app.jar
