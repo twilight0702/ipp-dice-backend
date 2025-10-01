@@ -1,0 +1,15 @@
+# 生产环境配置
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/ipp_dice_prod?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+logging:
+  level:
+    com.ippclub.ippdicebackend: warn
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/ipp-dice/app.log

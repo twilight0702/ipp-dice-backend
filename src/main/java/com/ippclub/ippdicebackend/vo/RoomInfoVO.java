@@ -1,63 +1,53 @@
-package com.ippclub.ippdicebackend.entity;
+package com.ippclub.ippdicebackend.vo;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
-/**
- * 房间实体类
- * 对应数据库表: room
- */
 @Data
-@TableName("room")
-public class Room {
+public class RoomInfoVO {
 
     /**
      * 主键，雪花算法生成
      */
-    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
     /**
      * 房间名
      */
-    @TableField("name")
     private String name;
 
     /**
      * 过期时间
      */
-    @TableField("expire_time")
     private LocalDateTime expireTime;
 
     /**
      * 当前轮次
      */
-    @TableField("round")
     private Integer round;
 
     /**
-     * 是否开启，0=未开启 1=已开启
+     * 是否开启
      */
-    @TableField("is_open")
     private Integer isOpen;
 
     /**
      * 逻辑删除标记，0=正常 1=删除
      */
-    @TableField("is_del")
-    @TableLogic
     private Integer isDel;
 
     /**
      * 创建时间
      */
-    @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
-    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 }

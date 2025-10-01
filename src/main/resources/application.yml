@@ -1,6 +1,22 @@
 spring:
   application:
     name: ipp-dice-backend
+  profiles:
+    active: dev
+
+# 默认配置（通用配置）
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  type-handlers-package: com.ippclub.ippdicebackend.handler
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
 # MySQL Database Configuration
   datasource:
@@ -21,10 +37,3 @@ spring:
 #              min-idle: 0
 
 # MyBatis-Plus Configuration
-mybatis-plus:
-  configuration:
-    map-underscore-to-camel-case: true
-  global-config:
-    db-config:
-      logic-delete-value: 1
-      logic-not-delete-value: 0

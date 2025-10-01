@@ -14,6 +14,8 @@ import com.ippclub.ippdicebackend.mapper.PlayerMapper;
 import com.ippclub.ippdicebackend.mapper.RollRecordMapper;
 import com.ippclub.ippdicebackend.mapper.RoomMapper;
 import com.ippclub.ippdicebackend.mapper.RoomPlayerMapper;
+import com.ippclub.ippdicebackend.vo.HistoryRecordVO;
+import com.ippclub.ippdicebackend.vo.PlayerRecordVO;
 import com.ippclub.ippdicebackend.vo.PlayerRollVO;
 import lombok.extern.slf4j.Slf4j;
 import lombok.extern.slf4j.XSlf4j;
@@ -53,6 +55,7 @@ public class PlayerService {
         log.info("玩家 {} 在房间 {} 中完成投掷", player.getName(), request.getRoomId());
 
         PlayerRollVO playerRollVO = new PlayerRollVO();
+        playerRollVO.setPlayerId(player.getId());
         playerRollVO.setRound(rollRecord.getRound());
         playerRollVO.setDice(rollRecord.getDice());
         playerRollVO.setOutcome(rollRecord.getOutcome());
@@ -156,5 +159,13 @@ public class PlayerService {
         log.debug("投掷记录保存结果，影响行数: {}", insertResult);
 
         return rollRecord;
+    }
+
+    public HistoryRecordVO getPlayerRecords(Long roomId, Long playerId) {
+        List<PlayerRecordVO> playerRecordVOS = rollRecordMapper.selectPlayerRecordsByRoomIdAndPlayerId(roomId, playerId);
+
+        HistoryRecordVO historyRecordVO = new HistoryRecordVO();
+        historyRecordVO.setHistoryRecords(playerRecordVOS);
+        return historyRecordVO;
     }
 }

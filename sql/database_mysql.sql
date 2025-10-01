@@ -23,6 +23,7 @@ CREATE TABLE room (
                       name VARCHAR(64) NOT NULL COMMENT '房间名',
                       expire_time TIMESTAMP NULL DEFAULT NULL COMMENT '过期时间',
                       round INT NOT NULL DEFAULT 0 COMMENT '当前轮次',
+                      is_open TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否开放，0=否 1=是',
                       is_del TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除标记，0=正常 1=删除',
                       create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                       update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',

@@ -5,12 +5,10 @@ import com.ippclub.ippdicebackend.common.Response;
 import com.ippclub.ippdicebackend.dto.JoinRoomDTO;
 import com.ippclub.ippdicebackend.service.PlayerService;
 import com.ippclub.ippdicebackend.service.RollService;
+import com.ippclub.ippdicebackend.vo.HistoryRecordVO;
 import com.ippclub.ippdicebackend.vo.PlayerRollVO;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 玩家博饼游戏相关接口
@@ -49,5 +47,13 @@ public class PlayerController {
     public Response<PlayerRollVO> roll(@RequestBody JoinRoomDTO request) {
         PlayerRollVO roll = playerService.roll(request);
         return Response.success(roll);
+    }
+
+    /**
+     * 获取自己的全部投掷记录
+     */
+    @GetMapping("/history-records")
+    public Response<HistoryRecordVO> getPlayerRecords(@RequestParam("roomId") Long roomId, @RequestParam("playerId") Long playerId) {
+        return Response.success(playerService.getPlayerRecords(roomId,playerId));
     }
 }

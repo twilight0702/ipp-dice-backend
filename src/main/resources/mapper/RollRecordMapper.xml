@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ippclub.ippdicebackend.mapper.RollRecordMapper">
+
+    <resultMap id="PlayerRecordVO" type="com.ippclub.ippdicebackend.vo.PlayerRecordVO">
+        <result column="player_id" property="playerId"/>
+        <result column="cardnum" property="cardnum"/>
+        <result column="name" property="name"/>
+        <result column="round" property="round"/>
+        <result column="dice" property="dice"/>
+        <result column="outcome" property="diceOutcome"/>
+        <result column="score" property="score"/>
+        <result column="create_time" property="rollTime"/>
+    </resultMap>
+
+    <select id="selectPlayerRecordsByRoomId" resultMap="PlayerRecordVO">
+        SELECT
+            p.id AS player_id,
+            p.cardnum,
+            p.name,
+            rr.round,
+            rr.dice,
+            rr.outcome,
+            rr.score,
+            rr.create_time
+        FROM player p
+        RIGHT JOIN roll_record rr ON p.id = rr.player_id
+        WHERE rr.room_id = #{roomId}
+        ORDER BY rr.score DESC
+    </select>
+
+    <select id="selectPlayerRecordsByRoomIdAndPlayerId" resultMap="PlayerRecordVO">
+        SELECT
+            p.id AS player_id,
+            p.cardnum,
+            p.name,
+            rr.round,
+            rr.dice,
+            rr.outcome,
+            rr.score,
+            rr.create_time
+        FROM player p
+        RIGHT JOIN roll_record rr ON p.id = rr.player_id
+        WHERE rr.room_id = #{roomId} AND p.id = #{playerId}
+        ORDER BY rr.round DESC
+    </select>
+</mapper>
