@@ -17,6 +17,7 @@ import com.ippclub.ippdicebackend.mapper.RoomPlayerMapper;
 import com.ippclub.ippdicebackend.vo.HistoryRecordVO;
 import com.ippclub.ippdicebackend.vo.PlayerRecordVO;
 import com.ippclub.ippdicebackend.vo.PlayerRollVO;
+import com.ippclub.ippdicebackend.vo.RoomInfoVO;
 import lombok.extern.slf4j.Slf4j;
 import lombok.extern.slf4j.XSlf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,8 @@ public class PlayerService {
     private RoomMapper roomMapper;
     @Autowired
     private RollService rollService;
+    @Autowired
+    private RoomService roomService;
 
     public void joinRoom(JoinRoomDTO request) {
         log.info("玩家尝试加入房间，请求参数: {}", request);
@@ -47,10 +50,17 @@ public class PlayerService {
         log.info("玩家 {} 成功加入房间 {}", player.getName(), request.getRoomId());
     }
 
-    public PlayerRollVO roll(JoinRoomDTO request){
+    public PlayerRollVO roll(JoinRoomDTO request) {
         log.info("玩家在房间 {} 中进行投掷，请求参数: {}", request.getRoomId(), request);
         Player player = addPlayer(request);
         addRoomPlayer(request.getRoomId(), player.getId());
+
+        RoomInfoVO roomInfo = roomService.getRoomInfo(request.getRoomId());
+        if (roomInfo.getIsOpen() == 0) {
+            throw new BusinessConflictException(409, "房间已关闭，无法投掷");
+        }
+
+
         RollRecord rollRecord = addPlayRecord(request.getRoomId(), player.getId());
         log.info("玩家 {} 在房间 {} 中完成投掷", player.getName(), request.getRoomId());
 
@@ -113,7 +123,7 @@ public class PlayerService {
         roomPlayer.setRoomId(roomId);
         roomPlayer.setPlayerId(playerId);
         roomPlayer.setJoinTime(LocalDateTime.now());
-        
+
         log.info("将玩家添加到房间-玩家表，房间ID: {}, 玩家ID: {}", roomId, playerId);
         int insertResult = roomPlayerMapper.insert(roomPlayer);
         log.debug("房间-玩家关系创建结果，影响行数: {}", insertResult);
@@ -135,15 +145,15 @@ public class PlayerService {
 
         // 判断轮次是否合理
         if (rollRecords.size() >= room.getRound()) {
-            log.warn("轮次已结束，无法继续投掷，房间ID: {}, 玩家ID: {}, 当前轮次: {}, 房间总轮次: {}", 
-                     roomId, playerId, rollRecords.size(), room.getRound());
+            log.warn("轮次已结束，无法继续投掷，房间ID: {}, 玩家ID: {}, 当前轮次: {}, 房间总轮次: {}",
+                    roomId, playerId, rollRecords.size(), room.getRound());
             throw new BusinessConflictException(1001, "轮次已结束，无法继续投掷");
         }
 
         log.info("执行投掷操作，房间ID: {}, 玩家ID: {}, 当前轮次: {}", roomId, playerId, rollRecords.size() + 1);
         RollResult roll = rollService.roll();
         log.debug("投掷结果: {}", roll);
-        
+
         RollRecord rollRecord = new RollRecord();
         rollRecord.setRoomId(roomId);
         rollRecord.setPlayerId(playerId);
@@ -152,9 +162,9 @@ public class PlayerService {
         rollRecord.setDice(roll.getDices().toString());
         rollRecord.setScore(roll.getScore());
         rollRecord.setCreateTime(LocalDateTime.now());
-        
+
         log.info("保存投掷记录，房间ID: {}, 玩家ID: {}, 轮次: {}, 结果: {}， 骰子: {}",
-                 roomId, playerId, rollRecord.getRound(), rollRecord.getOutcome(), rollRecord.getDice());
+                roomId, playerId, rollRecord.getRound(), rollRecord.getOutcome(), rollRecord.getDice());
         int insertResult = rollRecordMapper.insert(rollRecord);
         log.debug("投掷记录保存结果，影响行数: {}", insertResult);
 
