@@ -45,7 +45,7 @@ jobs:
             cd /home/${{ secrets.SERVER_USER }}/app
 
             # 删除旧的 jar
-            rm -f ipp-dice-backend-*.jar app.jar
+            rm -f app.jar
 
             # 把最新上传的 jar 统一命名为 app.jar
             mv ipp-dice-backend-*.jar app.jar
