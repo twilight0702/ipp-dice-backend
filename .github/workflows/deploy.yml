@@ -30,7 +30,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "target/ipp-dice-backend-*.jar,!target/*.jar.original"
-          target: "/home/${{ secrets.SERVER_USER }}/app/app.jar"
+          target: "/home/${{ secrets.SERVER_USER }}/app/"
 
       - name: Restart Service
         uses: appleboy/ssh-action@v0.1.10
@@ -39,4 +39,15 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            # 确保目录存在
+            mkdir -p /home/${{ secrets.SERVER_USER }}/app
+            cd /home/${{ secrets.SERVER_USER }}/app
+
+            # 删除旧的 jar
+            rm -f ipp-dice-backend-*.jar app.jar
+
+            # 把最新上传的 jar 统一命名为 app.jar
+            mv ipp-dice-backend-*.jar app.jar
+
+            # 重启服务
             sudo systemctl restart app
