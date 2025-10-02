@@ -9,18 +9,12 @@ import com.ippclub.ippdicebackend.entity.Room;
 import com.ippclub.ippdicebackend.exception.ResourceNotFoundException;
 import com.ippclub.ippdicebackend.mapper.RollRecordMapper;
 import com.ippclub.ippdicebackend.mapper.RoomMapper;
-import com.ippclub.ippdicebackend.vo.CreateRoomVO;
-import com.ippclub.ippdicebackend.vo.PlayerRecordVO;
-import com.ippclub.ippdicebackend.vo.RoomInfoVO;
-import com.ippclub.ippdicebackend.vo.RoomRankVO;
+import com.ippclub.ippdicebackend.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -76,6 +70,10 @@ public class RoomService {
         }
 
         Room room = optionalRoom.get();
+        return room2RoomInfoVO(room);
+    }
+
+    private RoomInfoVO room2RoomInfoVO(Room room){
         RoomInfoVO vo = new RoomInfoVO();
         vo.setId(room.getId());
         vo.setName(room.getName());
@@ -92,11 +90,18 @@ public class RoomService {
      * 获取房间排行榜
      */
     public RoomRankVO getRoomRank(Long roomId, RoleType roleType) {
+        List<PlayerRecordVO> roomRolls = getRoomRolls(roomId);
+        if (roomRolls.isEmpty()){
+            RoomRankVO vo = new RoomRankVO();
+            vo.setPlayerRecords(new ArrayList<>());
+            return vo;
+        }
+
         List<PlayerRecordVO> records = switch (roleType) {
-            case HIGHEST_SCORE -> getHighestScoreRank(roomId);
-            case LAST_ROLL -> getLastRollRank(roomId);
-            case TOTAL_SCORE -> getTotalScoreRank(roomId);
-            default -> getHighestScoreRank(roomId); // 默认按最高分
+            case HIGHEST_SCORE -> getHighestScoreRank(roomRolls);
+            case LAST_ROLL -> getLastRollRank(roomRolls);
+            case TOTAL_SCORE -> getTotalScoreRank(roomRolls);
+            default -> getHighestScoreRank(roomRolls); // 默认按最高分
         };
 
         RoomRankVO roomRankVO = new RoomRankVO();
@@ -104,10 +109,7 @@ public class RoomService {
         return roomRankVO;
     }
 
-    private List<PlayerRecordVO> getHighestScoreRank(Long roomId) {
-        // 获取所有记录
-        List<PlayerRecordVO> allRecords = rollRecordMapper.selectPlayerRecordsByRoomId(roomId);
-
+    private List<PlayerRecordVO> getHighestScoreRank(List<PlayerRecordVO> allRecords) {
         // 按玩家分组，取每个玩家的最高分记录
         Map<Long, PlayerRecordVO> highestScoreMap = allRecords.stream()
                 .collect(Collectors.groupingBy(
@@ -129,10 +131,7 @@ public class RoomService {
                 .collect(Collectors.toList());
     }
 
-    private List<PlayerRecordVO> getLastRollRank(Long roomId) {
-        // 获取所有记录
-        List<PlayerRecordVO> allRecords = rollRecordMapper.selectPlayerRecordsByRoomId(roomId);
-
+    private List<PlayerRecordVO> getLastRollRank(List<PlayerRecordVO> allRecords) {
         // 按玩家分组，取每个玩家的最后一条记录
         Map<Long, PlayerRecordVO> lastRollMap = allRecords.stream()
                 .collect(Collectors.groupingBy(
@@ -153,10 +152,7 @@ public class RoomService {
                 .collect(Collectors.toList());
     }
 
-    private List<PlayerRecordVO> getTotalScoreRank(Long roomId) {
-        // 获取所有记录
-        List<PlayerRecordVO> allRecords = rollRecordMapper.selectPlayerRecordsByRoomId(roomId);
-
+    private List<PlayerRecordVO> getTotalScoreRank(List<PlayerRecordVO> allRecords) {
         // 按玩家分组，计算每个玩家的总分
         Map<Long, PlayerRecordVO> totalScoreMap = allRecords.stream()
                 .collect(Collectors.groupingBy(
@@ -233,5 +229,17 @@ public class RoomService {
         if (update <= 0) {
             throw new ResourceNotFoundException("房间不存在， roomId = " + roomId);
         }
+    }
+
+    public RoomListVO listRooms() {
+        List<Room> rooms = roomMapper.selectList(null);
+        List<RoomInfoVO> roomInfoVOS = new ArrayList<>();
+        for (Room room : rooms) {
+            roomInfoVOS.add( room2RoomInfoVO(room));
+        }
+
+        RoomListVO roomListVO = new RoomListVO();
+        roomListVO.setRoomInfoVOS(roomInfoVOS);
+        return roomListVO;
     }
 }

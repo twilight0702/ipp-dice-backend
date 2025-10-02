@@ -7,6 +7,7 @@ import com.ippclub.ippdicebackend.exception.ResourceNotFoundException;
 import com.ippclub.ippdicebackend.service.RoomService;
 import com.ippclub.ippdicebackend.vo.CreateRoomVO;
 import com.ippclub.ippdicebackend.vo.RoomInfoVO;
+import com.ippclub.ippdicebackend.vo.RoomListVO;
 import com.ippclub.ippdicebackend.vo.RoomRankVO;
 import jakarta.websocket.server.PathParam;
 import lombok.extern.slf4j.Slf4j;
@@ -83,6 +84,14 @@ public class RoomController {
     public Response<?> openRoom(@RequestParam("roomId") Long roomId) {
         roomService.openRoom(roomId);
         return Response.success();
+    }
+
+    /**
+     * 列出当前所有房间信息
+     */
+    @GetMapping("/list")
+    public Response<RoomListVO> listRooms() {
+        return Response.success(roomService.listRooms());
     }
 
 //    @PostMapping("/{roomId}/open")
