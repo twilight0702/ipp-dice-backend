@@ -11,10 +11,14 @@ import com.ippclub.ippdicebackend.mapper.RollRecordMapper;
 import com.ippclub.ippdicebackend.mapper.RoomMapper;
 import com.ippclub.ippdicebackend.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +30,12 @@ public class RoomService {
     @Autowired
     private RollRecordMapper rollRecordMapper;
 
+    @Autowired
+    private TaskScheduler taskScheduler;
+
+    // 存储房间ID与定时任务的映射关系
+    private final Map<Long, ScheduledFuture<?>> scheduledTasks = new HashMap<>();
+
     public CreateRoomVO createRoom(CreateRoomDTO request) {
         // 创建房间，返回房间ID
         Room room = new Room();
@@ -34,7 +44,7 @@ public class RoomService {
 
         // 设置过期时间
         if (request.getTtl() > 0) {
-            room.setExpireTime(LocalDateTime.now().plusMinutes(request.getTtl()));
+            room.setExpireTime(LocalDateTime.now().plusSeconds(request.getTtl()));
         } else {
             // 如果ttl为-1或未设置，则设置为null表示永不过期
             room.setExpireTime(null);
@@ -43,12 +53,39 @@ public class RoomService {
         // 保存房间信息
         roomMapper.insert(room);
 
+        // 如果设置了过期时间，则创建定时任务
+        if (room.getExpireTime() != null) {
+            scheduleRoomClosure(room.getId(), room.getExpireTime());
+        }
+
         // 返回VO
         CreateRoomVO vo = new CreateRoomVO();
         vo.setRoomId(room.getId());
 
         // 返回房间ID
         return vo;
+    }
+
+    /**
+     * 安排房间关闭任务
+     * @param roomId 房间ID
+     * @param expireTime 过期时间
+     */
+    private void scheduleRoomClosure(Long roomId, LocalDateTime expireTime) {
+        // 取消已存在的任务（如果有的话）
+        ScheduledFuture<?> existingTask = scheduledTasks.get(roomId);
+        if (existingTask != null && !existingTask.isDone()) {
+            existingTask.cancel(false);
+        }
+
+        // 创建新的定时任务
+        ScheduledFuture<?> scheduledTask = taskScheduler.schedule(
+                () -> closeRoom(roomId),
+                Date.from(expireTime.atZone(ZoneId.systemDefault()).toInstant())
+        );
+
+        // 保存任务引用
+        scheduledTasks.put(roomId, scheduledTask);
     }
 
     public void updateRound(Long roomId, Integer round) {
@@ -209,6 +246,13 @@ public class RoomService {
      * @return
      */
     public void closeRoom(Long roomId) {
+        // 取消对应的定时任务（如果有的话）
+        ScheduledFuture<?> scheduledTask = scheduledTasks.get(roomId);
+        if (scheduledTask != null && !scheduledTask.isDone()) {
+            scheduledTask.cancel(false);
+            scheduledTasks.remove(roomId);
+        }
+        
         LambdaUpdateWrapper<Room> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(Room::getId, roomId)
                 .set(Room::getIsOpen, 0);
